@@ -1,0 +1,9 @@
+#! /bin/sh
+
+if [ $# -eq 0 ]; then
+  echo
+elif [ $1 = "measure_temp" ]; then
+  echo "temp=48.7'C"
+elif [ $1 = "measure_volts" ]; then
+  echo "volt=1.200V"
+fi;

@@ -1,0 +1,219 @@
+#!/bin/bash
+
+# reset environment
+if [ "$(/usr/bin/env | /bin/grep -Ev '^(PWD|SHLVL|_)=')" ] ; then
+	exec /usr/bin/env - /bin/bash "$0" "$@"
+fi
+
+CONFIG=/boot/config.txt
+CPUFREQCONFIG=/etc/default/cpufrequtils
+
+usage() {
+	cat <<-EOF
+	Usage: $(basename $0) enable | disable | status | available <feature>
+	Supported features: gui downclock-cpu perf-governor var-log.mount
+	                    dphys-swapfile revpi-tunnel teamviewer-revpi revpi7
+	                    pimodbus-master pimodbus-slave systemd-timesyncd
+	                    ntp ssh logi-rts spidercontrol procon-web-iot
+	EOF
+}
+
+# do_gui <verb>
+do_gui() {
+	case "$1" in
+	enable)		/bin/systemctl set-default graphical.target ;;
+	disable)	/bin/systemctl set-default multi-user.target ;;
+	status|availstat)
+			[ "$(/bin/systemctl get-default)" != "graphical.target" ]
+			return ;;
+	available)	return 1 ;;
+	esac
+}
+
+do_governor() {
+	case "$1" in
+	enable)		do_governor available
+			if [ $? = 0 ] ; then
+				return
+			fi
+			/bin/sed -r -i -e "/^GOVERNOR=/d" "$CPUFREQCONFIG" \
+				2>/dev/null
+			echo "GOVERNOR=$2" >> "$CPUFREQCONFIG"
+			do_service disable raspi-config
+			do_service enable cpufrequtils ;;
+	disable)	do_governor available
+			if [ $? = 0 ] ; then
+				return
+			fi
+			do_service disable cpufrequtils
+			do_service enable raspi-config
+			/bin/sed -r -i -e "/^GOVERNOR=/d" "$CPUFREQCONFIG" \
+				2>/dev/null ;;
+	status)		val=$(/bin/grep -E "^GOVERNOR=$2" "$CPUFREQCONFIG" \
+				2>/dev/null |
+				/usr/bin/cut -d= -f2- | /usr/bin/tail -1)
+			if  [ -z "$val" ] ; then
+				echo -n "ondemand "
+			else
+				echo -n "$val "
+			fi
+			if [ -n "$2" ] ; then
+				[ "$2" != "$val" ] ; return
+			else
+				[ -z "$val" ] ; return
+			fi ;;
+	available)	/bin/grep -E -q ARMv7 /proc/cpuinfo &&
+			/usr/bin/dpkg-query -s cpufrequtils >/dev/null 2>&1
+			[ $? = 1 ] ; return ;;
+	availstat)	do_governor available
+			if [ $? = 0 ] ; then
+				return 2
+			fi
+			do_governor status "$2"
+			return ;;
+	esac
+}
+
+
+get_config_var() {
+	/bin/grep -E "^[[:blank:]]*${1}=" "$CONFIG" |
+		/usr/bin/cut -d= -f2- | /usr/bin/tail -1
+}
+
+clear_config_var() {
+	/bin/sed -r -i -e "/^[[:blank:]]*${1}=${2}/d" "$CONFIG"
+	/bin/sync
+}
+
+set_config_var() {
+	if [ "$(get_config_var $1)" = "$2" ] ; then
+		return
+	fi
+	clear_config_var "$1"
+	echo "$1=$2" >> "$CONFIG"
+	/bin/sync
+}
+
+# do_config <verb> <variable-name> <variable-value> <cpuinfo-regex>
+do_config() {
+	case "$1" in
+	enable)		set_config_var "$2" "$3" ;;
+	disable)	clear_config_var "$2" "$3" ;;
+	status)		val="$(get_config_var $2)"
+			if  [ -z "$val" ] ; then
+				echo -n "0 "
+			else
+				echo -n "$val "
+			fi
+			if [ -n "$3" ] ; then
+				[ "$3" != "$val" ] ; return
+			else
+				[ -z "$val" ] ; return
+			fi ;;
+	available)	/bin/grep -E -q "$4" /proc/cpuinfo
+			[ $? = 1 ] ; return ;;
+	availstat)	do_config available "$2" "$3" "$4"
+			if [ $? = 0 ] ; then
+				return 2
+			fi
+			do_config status "$2" "$3" "$4"
+			return ;;
+	esac
+}
+
+dphys-swapfile-post-disable() {
+	# remove swapfile
+	/sbin/dphys-swapfile uninstall
+}
+
+var-log.mount-pre-enable() {
+	# disable is no longer sufficient on stretch
+	/bin/systemctl unmask var-log.mount
+}
+
+var-log.mount-post-disable() {
+	/bin/systemctl mask var-log.mount
+}
+
+systemd-timesyncd-override-available() {
+	# fake nonavailability of systemd-timesyncd on jessie
+	# so that only ntpd is visible in the GUI
+	source /etc/os-release
+	[ "$VERSION_ID" -le 8 ]
+}
+
+# do_service <verb> <service>
+do_service() {
+	declare -f "$2-override-$1" >/dev/null 2>&1 && { eval "$2-override-$1"
+							 return ; }
+	declare -f "$2-pre-$1" >/dev/null 2>&1 && eval "$2-pre-$1"
+	case "$1" in
+	enable)		/bin/systemctl start   "$2"
+			/bin/systemctl enable  "$2" ;;
+	disable)	/bin/systemctl stop    "$2"
+			/bin/systemctl disable "$2" ;;
+	status)		/bin/systemctl status  "$2" 2>&1 | /bin/grep -q /etc/init.d
+			if [ $? = 0 ] ; then
+				# https://bugs.debian.org/760616
+				# this is fixed in stretch
+				[ -n "$(/bin/ls /etc/rc?.d/S??$2 2>/dev/null)" ]
+			else
+				/bin/systemctl is-enabled "$2" > /dev/null 2>&1
+			fi
+			[ $? = 1 ] ; return ;;
+	available)	/bin/systemctl status  "$2" 2>&1 | /bin/grep -qE "not(-| be )found"
+			return ;;
+	availstat)	do_service available "$2"
+			if [ $? = 0 ] ; then 
+				return 2
+			fi
+			do_service status "$2"
+			return ;;
+	esac
+	ret=$?
+	declare -f "$2-post-$1" >/dev/null 2>&1 && eval "$2-post-$1"
+	return $ret
+}
+
+if [ "$1" != enable ] && 
+   [ "$1" != disable ] && 
+   [ "$1" != status ] &&
+   [ "$1" != available ] &&
+   [ "$1" != availstat ] ; then
+	usage
+	exit
+fi
+
+cmd="$1"
+shift
+while [ $# -gt 0 ] ; do
+	svc="$1"
+	case "$svc" in
+	gui)			do_gui "$cmd" ;;
+	downclock-cpu)		if [[ $2 =~ ^[0-9]+$ ]] ; then
+					arg="$2"
+					shift 
+				else
+					arg=""
+				fi
+				do_config "$cmd" arm_freq "$arg" ARMv7 ;;
+	perf-governor)		do_governor "$cmd" performance ;;
+	var-log.mount)		do_service "$cmd" "$svc" ;;
+	dphys-swapfile)		do_service "$cmd" "$svc" ;;
+	revpi-tunnel)		do_service "$cmd" "$svc" ;;
+	teamviewer-revpi)	do_service "$cmd" "$svc" ;;
+	revpi7)			do_service "$cmd" "$svc" ;;
+	pimodbus-master)	do_service "$cmd" "$svc" ;;
+	pimodbus-slave)		do_service "$cmd" "$svc" ;;
+	systemd-timesyncd)	do_service "$cmd" "$svc" ;;
+	ntp|ssh)		do_service "$cmd" "$svc" ;;
+	logi-rts|spidercontrol)	do_service "$cmd" "$svc" ;;
+	procon-web-iot)		do_service "$cmd" "$svc" ;;
+	*)			usage ; exit ;;
+	esac
+	echo -n "$? "
+	shift
+done
+
+echo
+

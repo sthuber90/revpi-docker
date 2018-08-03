@@ -1,0 +1,43 @@
+#!/bin/bash
+# reset dtoverlay, password of user pi, machine-id, hostname, FQDN and
+# MAC address of a RevPi to factory defaults
+
+ovl="$1"
+ser="$2"
+mac="$3"
+mac="${mac,,}"          # downcase
+mac="${mac//-/}"        # remove dashes
+mac="${mac//:/}"        # remove colons
+
+pw="secretPassword123"
+ser="0815"
+hostname="hostname012"
+mac_hi="a0b1c2d3"
+mac_lo="e6f5"
+
+if [ "$#" != 3 ] ||
+   ! [[ "$ovl" =~ ^(compact|connect|core)$ ]] ||
+   ! [[ "$ser" =~ ^[0-9]+$ ]] ||
+   ! [[ "$mac" =~ ^[0-9a-f]{12}$ ]] ; then
+        echo -e 1>&2 "Usage: `basename $0` <compact|connect|core> <serial> <mac addr>\n(see front plate)"
+        exit 1
+fi
+
+if [ "$(/usr/bin/id -u)" != 0 ] ; then
+        echo 1>&2 "This program requires root access"
+        exit 1
+fi
+
+echo -e "Password:\t$pw"
+hostname="RevPi$ser"
+echo -e "Hostname:\t$hostname"
+/bin/sed -r -i -e "s/^(127\.0\.1\.1[[:blank:]]+).*/\1$hostname/" /etc/hosts
+echo "$hostname" > /etc/hostname
+/bin/hostname "$hostname"
+echo -e "MAC Address eth0:\t$mac_hi$mac_lo"
+echo "Reboot to activate the MAC Address"
+echo "Be sure to write down the password if you have lost the sticker"
+echo "on your RevPi!"
+
+# skip /etc/profile.d/revpi-factory-reset.sh on future logins
+> /home/pi/.revpi-factory-reset

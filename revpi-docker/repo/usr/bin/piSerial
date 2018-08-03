@@ -1,0 +1,48 @@
+#! /bin/bash
+
+pw="secretPassword123"
+hn="hostname012"
+ser="1234567890"
+
+usage() {
+    cat <<EOF
+usage: piSerial [-s|-h|-p]
+
+-s show serial number
+-h show hostname
+-p show inital password
+no argument: show all
+EOF
+    exit
+}
+
+serial_number() {
+    echo "$ser"
+}
+
+hostname() {
+    echo "$hn"
+}
+
+password() {
+    echo "$pw"
+}
+
+(($# > 1)) && usage
+if (($# == 0)); then
+    echo "$ser $hn $pw"
+else case "$1" in
+    -s)
+        serial_number
+        ;;
+    -h)
+        hostname
+        ;;
+    -p)
+        password
+        ;;
+    *)
+        usage
+        ;;
+    esac
+fi
