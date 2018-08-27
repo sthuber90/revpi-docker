@@ -9,7 +9,7 @@ script:
  - cd revpi-docker && 
    chmod +x repo/usr/bin/piSerial &&
    chmod +x repo/usr/bin/revpi-config &&
-   chmod +x repo/opt/vc/bin/vcgencmd
+   chmod +x repo/opt/vc/bin/vcgencmd &&
    docker build -t $REPO:$TAG -f Dockerfile .
 
 after_success:
