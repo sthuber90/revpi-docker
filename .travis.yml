@@ -7,9 +7,9 @@ script:
  - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
  - export REPO=sthuber90/revpi
  - cd revpi-docker && 
-   chmod +x /usr/bin/piSerial &&
-   chmod +x /usr/bin/revpi-config &&
-   chmod +x /opt/vc/bin/vcgencmd
+   chmod +x repo/usr/bin/piSerial &&
+   chmod +x repo/usr/bin/revpi-config &&
+   chmod +x repo/opt/vc/bin/vcgencmd
    docker build -t $REPO:$TAG -f Dockerfile .
 
 after_success:
