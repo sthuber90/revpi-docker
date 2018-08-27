@@ -4,7 +4,7 @@ services:
 script:
  - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
  - export REPO=sthuber90/revpi
- - cd revpi && docker build -t $REPO:$TAG -f Dockerfile .
+ - cd revpi-docker && docker build -t $REPO:$TAG -f Dockerfile .
 
 after_success:
  - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
