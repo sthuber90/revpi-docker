@@ -1,6 +1,7 @@
-# revpi-docker
-Kunbus Revolution Pi Docker Image
+# RevolutionPi Docker
+[Kunbus Revolution Pi](https://revolution.kunbus.de/) Docker Image
 
 Currently supports `vcgencmd`, `piSerial`, `revpi-factory-reset`, `ip` commands.
 
-TODO: fix revpi-factory-reset
+### Open issues
+- renaming the hostname to 'RevPiXXXX' seems to be not possible in Docker

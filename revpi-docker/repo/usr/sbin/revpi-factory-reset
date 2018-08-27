@@ -33,7 +33,8 @@ hostname="RevPi$ser"
 echo -e "Hostname:\t$hostname"
 /bin/sed -r -i -e "s/^(127\.0\.1\.1[[:blank:]]+).*/\1$hostname/" /etc/hosts
 echo "$hostname" > /etc/hostname
-/bin/hostname "$hostname"
+# not possible within docker container
+# /bin/hostname "$hostname"
 echo -e "MAC Address eth0:\t$mac_hi$mac_lo"
 echo "Reboot to activate the MAC Address"
 echo "Be sure to write down the password if you have lost the sticker"
