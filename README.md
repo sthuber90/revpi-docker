@@ -5,3 +5,6 @@ Currently supports `vcgencmd`, `piSerial`, `revpi-factory-reset`, `ip` commands.
 
 ### Open issues
 - renaming the hostname to 'RevPiXXXX' seems to be not possible in Docker
+- systemd is not woking
+  - causes shutdown command to not work -> even though it's actually a silly command to run inside a docker container
+  
