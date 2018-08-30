@@ -7,6 +7,7 @@ jobs:
   include:
     - stage: Build & Push RevPi Docker Image
       script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
         - export REPO=sthuber90/revpi
         - cd revpi-docker 
@@ -14,7 +15,6 @@ jobs:
         - chmod +x repo/usr/bin/revpi-config
         - chmod +x repo/opt/vc/bin/vcgencmd
         - docker build -t $REPO:$TAG -f Dockerfile .
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
             docker tag $REPO:$TAG $REPO:$TRAVIS_BUILD_NUMBER;
             docker push $REPO:$TRAVIS_BUILD_NUMBER;
@@ -22,22 +22,22 @@ jobs:
         - docker push $REPO:$TAG
     - stage: Build & Push Flavoured Images
       script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
         - export REPO=sthuber90/revpi-node
         - cd revpi-node  
         - docker build -t $REPO:$TAG -f Dockerfile . 
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin 
         - if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
             docker tag $REPO:$TAG $REPO:$TRAVIS_BUILD_NUMBER;
             docker push $REPO:$TRAVIS_BUILD_NUMBER;
           fi 
         - docker push $REPO:$TAG
     - script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
         - export REPO=sthuber90/revpi-python
         - cd revpi-python 
         - docker build -t $REPO:$TAG -f Dockerfile .
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
             docker tag $REPO:$TAG $REPO:$TRAVIS_BUILD_NUMBER;
             docker push $REPO:$TRAVIS_BUILD_NUMBER;
