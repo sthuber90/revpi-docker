@@ -1,4 +1,4 @@
-FROM revpi:latest
+FROM sthuber90/revpi:latest
 
 ENV PATH /usr/local/bin:$PATH
 ENV LANG=C.UTF-8

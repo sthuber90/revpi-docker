@@ -1,4 +1,4 @@
-FROM revpi:latest
+FROM sthuber90/revpi:latest
 
 RUN groupadd --gid 1000 node \
   && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
