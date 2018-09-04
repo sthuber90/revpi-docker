@@ -3,18 +3,23 @@ sudo: required
 services:
  - docker
 
+language: bash
+
 jobs:
   include:
     - stage: Build & Push RevPi Docker Image
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
+        - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; elif [ $TRAVIS_PULL_REQUEST == "true" ]; then echo $TRAVIS_PULL_REQUEST_BRANCH; else echo $TRAVIS_BUILD_NUMBER; fi`
         - export REPO=sthuber90/revpi
         - cd revpi-docker 
         - chmod +x repo/usr/bin/piSerial
+        - chmod +x repo/usr/bin/qemu-arm-static
         - chmod +x repo/usr/bin/revpi-config
         - chmod +x repo/opt/vc/bin/vcgencmd
-        - docker build -t $REPO:$TAG -f Dockerfile .
+        # prepare qemu
+        - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+        - docker build -t $REPO:$TAG .
         - if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
             docker tag $REPO:$TAG $REPO:$TRAVIS_BUILD_NUMBER;
             docker push $REPO:$TRAVIS_BUILD_NUMBER;
@@ -23,10 +28,12 @@ jobs:
     - stage: Build & Push Flavoured Images
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
+        - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; elif [ $TRAVIS_PULL_REQUEST == "true" ]; then echo $TRAVIS_PULL_REQUEST_BRANCH; else echo $TRAVIS_BUILD_NUMBER; fi`
         - export REPO=sthuber90/revpi-node
-        - cd revpi-node  
-        - docker build -t $REPO:$TAG -f Dockerfile . 
+        - cd revpi-node
+        # prepare qemu
+        - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+        - docker build -t $REPO:$TAG . 
         - if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
             docker tag $REPO:$TAG $REPO:$TRAVIS_BUILD_NUMBER;
             docker push $REPO:$TRAVIS_BUILD_NUMBER;
@@ -34,10 +41,12 @@ jobs:
         - docker push $REPO:$TAG
     - script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi`
+        - export TAG=`if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then echo "latest"; elif [ $TRAVIS_PULL_REQUEST == "true" ]; then echo $TRAVIS_PULL_REQUEST_BRANCH; else echo $TRAVIS_BUILD_NUMBER; fi`
         - export REPO=sthuber90/revpi-python
         - cd revpi-python 
-        - docker build -t $REPO:$TAG -f Dockerfile .
+        # prepare qemu
+        - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+        - docker build -t $REPO:$TAG .
         - if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
             docker tag $REPO:$TAG $REPO:$TRAVIS_BUILD_NUMBER;
             docker push $REPO:$TRAVIS_BUILD_NUMBER;
