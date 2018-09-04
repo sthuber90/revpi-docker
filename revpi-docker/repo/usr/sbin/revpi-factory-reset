@@ -10,7 +10,6 @@ mac="${mac//-/}"        # remove dashes
 mac="${mac//:/}"        # remove colons
 
 pw="secretPassword123"
-ser="0815"
 hostname="hostname012"
 mac_hi="a0b1c2d3"
 mac_lo="e6f5"
@@ -31,7 +30,8 @@ fi
 echo -e "Password:\t$pw"
 hostname="RevPi$ser"
 echo -e "Hostname:\t$hostname"
-/bin/sed -r -i -e "s/^(127\.0\.1\.1[[:blank:]]+).*/\1$hostname/" /etc/hosts
+# FIXME: this is not working
+# /bin/sed -r -i -e "s/^(127\.0\.1\.1[[:blank:]]+).*/\1$hostname/" /etc/hosts
 echo "$hostname" > /etc/hostname
 # not possible within docker container
 # /bin/hostname "$hostname"
@@ -41,4 +41,4 @@ echo "Be sure to write down the password if you have lost the sticker"
 echo "on your RevPi!"
 
 # skip /etc/profile.d/revpi-factory-reset.sh on future logins
-> /home/pi/.revpi-factory-reset
+touch /home/pi/.revpi-factory-reset
