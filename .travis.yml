@@ -16,6 +16,7 @@ jobs:
         - chmod +x repo/usr/bin/piSerial
         - chmod +x repo/usr/bin/qemu-arm-static
         - chmod +x repo/usr/bin/revpi-config
+        - chmod +x repo/usr/sbin/revpi-factory-reset
         - chmod +x repo/opt/vc/bin/vcgencmd
         # prepare qemu
         - docker run --rm --privileged multiarch/qemu-user-static:register --reset
