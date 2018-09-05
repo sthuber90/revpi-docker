@@ -7,4 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   dirmngr \
   && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /home/pi
+
 CMD [ "bash" ]

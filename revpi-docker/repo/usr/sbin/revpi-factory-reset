@@ -41,4 +41,4 @@ echo "Be sure to write down the password if you have lost the sticker"
 echo "on your RevPi!"
 
 # skip /etc/profile.d/revpi-factory-reset.sh on future logins
-touch /home/pi/.revpi-factory-reset
+> /home/pi/.revpi-factory-reset
